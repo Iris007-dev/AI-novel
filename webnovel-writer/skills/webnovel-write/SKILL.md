@@ -15,15 +15,16 @@ argument-hint: "[章号] [--fast|--minimal]"
 
 | 模式 | 流程 |
 |------|------|
-| 默认 | Step 1→2→3→4→5→6 |
+| 默认 | Step 1→2→3→3.5→4→5→6 |
 | `--fast` | Step 1→2→3(轻量)→4→5→6 |
-| `--minimal` | Step 1→2→3(写 no-review artifact)→4(仅排版)→5→6 |
+| `--minimal` | Step 1→2→3(写 no-review artifact + 跳过 3.5)→4(仅排版)→5→6 |
 
 ## 硬规则
 
 - 禁止并步、跳步、伪造审查
 - 必须使用 `Agent` 工具调用指定 subagent；不得用主流程口头代替 subagent 输出
 - 审查只跑一轮；blocking issue 定点修复或经用户裁决后才进 Step 4/5
+- 跨章一致性审查（Step 3.5）默认必跑；除 `--minimal` 外不得跳过
 - 失败只补跑失败步骤，不回退
 - 参考资料按步骤按需加载
 
@@ -166,6 +167,49 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" rev
 ```bash
 python -X utf8 -c "import json,os; from pathlib import Path; root=Path(os.environ['PROJECT_ROOT']); ch=int('{chapter_num}'); p=root/'.webnovel'/'tmp'/'review_results.json'; p.parent.mkdir(parents=True,exist_ok=True); p.write_text(json.dumps({'chapter':ch,'issues':[],'issues_count':0,'blocking_count':0,'has_blocking':False,'summary':'minimal mode: reviewer skipped by user-selected --minimal flow','review_skipped':True,'review_mode':'minimal'},ensure_ascii=False,indent=2),encoding='utf-8')"
 ```
+
+### Step 3.5：跨章一致性审查（cross-chapter-reviewer）
+
+reviewer 通过后（非 `--minimal` 模式），自动调用 `cross-chapter-reviewer` subagent，专门挑**只有跨章才能发现**的问题：
+
+- **未回收伏笔**（`unresolved_loop`）：前几章埋的 loop 在本章没有任何呼应
+- **未兑现承诺**（`broken_promise`）：角色已许下的承诺本章应兑现而未兑现
+- **违反已揭示规则**（`rule_contradiction`）：本章描述与已确立的世界观/规则冲突
+- **角色承诺漂移**（`relationship_drift`）：男主/女主/重要配角的动机或关系出现前后矛盾
+- **时间线跨章跳跃**（`timeline_jump`）：与上章衔接的时间跨度大于 1 天无过渡，或跨度与前文暗示冲突
+
+调用规范：
+
+Use the Agent tool to run `webnovel-writer:cross-chapter-reviewer`.
+
+Task:
+- chapter={chapter_num}
+- chapter_file=${CHAPTER_FILE}
+- project_root=${PROJECT_ROOT}
+- scripts_dir=${SCRIPTS_DIR}
+- 只返回严格的跨章审查 JSON，不写任何文件。
+- 不评分、不口头总结。
+
+agent 返回的 JSON 写入 `${PROJECT_ROOT}/.webnovel/tmp/cross_chapter_results.json`，由主流程合并到 `review_results.json` 的 `cross_chapter_issues` 字段（保持 schema 兼容）。`has_blocking` 任一维度为 true 即阻断。
+
+调用后主流程必须记录 `SubagentRun` 汇总（仅供最终报告使用）：
+
+```json
+{
+  "name": "cross-chapter-reviewer",
+  "user_label": "跨章一致性核查",
+  "status": "completed | partial | failed | skipped",
+  "problems": [],
+  "auto_handled": [],
+  "needs_user_action": false,
+  "duration_ms": 0,
+  "outputs": []
+}
+```
+
+跳过条件：仅 `--minimal` 模式可以跳过。其它任何跳过（数据源缺失、agent 失败）必须写入 `problems` / `auto_handled`，不得在最终报告中静默。
+
+`blocking=true` 的跨章 issue 处理方式与 reviewer 一致：定点修复或经用户裁决后进 Step 4。
 
 ### Step 4：润色
 
@@ -325,10 +369,11 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" use
 1. 正文文件存在且非空
 2. 审查已落库（`--minimal` 除外）
 3. blocking=true 必须在 Step 3 定点修复或经用户裁决
-4. anti_ai_force_check=pass（`--minimal` 除外）
-5. accepted CHAPTER_COMMIT，projection 五项 done/skipped
-6. chapter_status=committed（projection 自动推进）
-7. `write-gate` 的 prewrite / precommit / postcommit 均通过
+4. 跨章审查已落库或显式跳过（仅 `--minimal` 可跳过）
+5. anti_ai_force_check=pass（`--minimal` 除外）
+6. accepted CHAPTER_COMMIT，projection 五项 done/skipped
+7. chapter_status=committed（projection 自动推进）
+8. `write-gate` 的 prewrite / precommit / postcommit 均通过
 
 ## 失败恢复
 
