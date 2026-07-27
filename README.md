@@ -1,12 +1,22 @@
-# Webnovel Writer
+# Webnovel Writer (AI-novel fork)
 
 [![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-6.2.1-brightgreen.svg)](.claude-plugin/marketplace.json)
+[![Upstream](https://img.shields.io/badge/upstream-lingfengQAQ%2Fwebnovel--writer-orange.svg)](https://github.com/lingfengQAQ/webnovel-writer)
+[![Based on](https://img.shields.io/badge/version-6.2.1-brightgreen.svg)](.claude-plugin/marketplace.json)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![Claude Code](https://img.shields.io/badge/Claude%20Code-Compatible-purple.svg)](https://claude.ai/claude-code)
-[![Marketplace](https://img.shields.io/badge/Claude%20Code-Marketplace-black.svg)](.claude-plugin/marketplace.json)
 
-<a href="https://trendshift.io/repositories/22487" target="_blank"><img src="https://trendshift.io/api/badge/repositories/22487" alt="lingfengQAQ%2Fwebnovel-writer | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+> **关于本仓库（衍生项目声明）**
+>
+> 本项目是基于 [lingfengQAQ/webnovel-writer](https://github.com/lingfengQAQ/webnovel-writer) v6.2.1 的衍生 fork。
+> 原始项目采用 GPL v3 协议，本仓库遵循相同协议；原作者版权与署名见 [LICENSE](LICENSE) 与原仓库。
+>
+> 本 fork 的目标：在保留原始长篇网文创作系统的能力之上，专门服务于**言情长篇（古言 / 现言 / 民国言情 / 幻想言情 / 豪门总裁 / 替身文 / 宫斗宅斗 / 青春甜宠 / 狗血言情 / 种田 / 现言脑洞 / 职场婚恋）**做定制强化。
+>
+> 关于功能状态与言情增强方向，详见 [§ 言情增强路线图](#言情增强路线图) 与 [§ 给作者：使用方法](#给作者使用方法)。
+
+---
+
+# 原项目简介（上游）
 
 一个跑在 Claude Code 上的长篇网文创作插件。从初始化设定、规划卷纲，到写章、审查、沉淀记忆、查询状态，再到一个只读的可视化面板——整条创作流程都给你串好了。
 
@@ -14,9 +24,7 @@
 
 一句话定位：这是一套面向长篇连载的一致性系统，不是写完就忘的一次性生成器。
 
-> **v7 重构 RFC 公示中**
->
-> 下一代 v7 设计已经进入公开意见征集期，欢迎阅读 [Discussions #118：v7 设计公示](https://github.com/lingfengQAQ/webnovel-writer/discussions/118) 并留下反馈。只看 Issue 区的用户也可以从 [Issue #119：v7 公示指引帖](https://github.com/lingfengQAQ/webnovel-writer/issues/119) 进入；原“下一步方向投票”已结束，后续优先级将以 RFC 反馈和实施计划为准。
+> **v7 重构 RFC 公示中**：上游项目下一代 v7 设计已进入公开意见征集期，详见 [Discussions #118](https://github.com/lingfengQAQ/webnovel-writer/discussions/118)。
 
 ## 为什么需要它
 
@@ -28,9 +36,9 @@
 - 爽点、感情线、世界观扩展保持节奏
 - 每章写完后事实会沉淀到可检索的状态系统
 
-这套系统做的事，就是把上面这些“必须记住、不能写崩”的约束，变成 Claude Code 会自动执行的步骤：动笔前先查资料，写完后把新发生的事实记下来、做一致性审查，再把最新状态同步进检索索引、章节摘要、长期记忆和 Dashboard。它不只是“会写”，而是边写边攒。
+这套系统做的事，就是把上面这些”必须记住、不能写崩”的约束，变成 Claude Code 会自动执行的步骤：动笔前先查资料，写完后把新发生的事实记下来、做一致性审查，再把最新状态同步进检索索引、章节摘要、长期记忆和 Dashboard。它不只是”会写”，而是边写边攒。
 
-## 核心能力
+## 核心能力（沿用上游）
 
 | 能力 | 命令 | 说明 |
 |------|------|------|
@@ -43,49 +51,31 @@
 | 可视化面板 | `/webnovel-dashboard` | 只读浏览项目状态、实体图谱、章节内容和追读力数据 |
 | 项目体检 | `/webnovel-doctor` | 阶段感知检查目录、文件、数据库、RAG、依赖和 Dashboard 产物 |
 
-## 系统长什么样
-
-```mermaid
-flowchart LR
-    User[作者 / Claude Code] --> Skills[8 个 Skill 命令]
-    Skills --> Agents[Context / Reviewer / Data / Deconstruction Agent]
-    Agents --> Story[.story-system 合同与提交链]
-    Story --> Commit[accepted CHAPTER_COMMIT]
-    Commit --> State[.webnovel/state.json]
-    Commit --> Index[index.db / vectors.db]
-    Commit --> Summary[summaries / memory_scratchpad]
-    State --> Dashboard[只读 Dashboard]
-    Index --> Dashboard
-    Summary --> Dashboard
-```
-
-v6.0.0 的默认主链叫 **Story System**，几个关键角色：
-
-- `.story-system/`：唯一的事实源头，动笔前的“合同”和写完后的“提交”都存在这里
-- accepted 的 `CHAPTER_COMMIT`：一章写完，新事实从这里入账
-- `.webnovel/state.json`、`index.db`、`summaries/`、`memory_scratchpad.json`：都是从主链派生出来的只读视图，供查询和展示用
-- `.webnovel/projection_log.jsonl`：投影执行日志，用来定位 state/index/summary/memory/vector 哪一路没同步
-- `project-status`、`doctor`、`preflight` 和 Dashboard 会把主链与运行状态直接摆出来，哪里不对一眼就能看到
-
-## 快速开始
+## 给作者：使用方法
 
 ### 1. 安装插件
 
-通过 Claude Code Marketplace 安装：
+通过 Claude Code Marketplace 安装（在 Claude Code 里运行）：
 
 ```bash
-claude plugin marketplace add lingfengQAQ/webnovel-writer --scope user
+# 添加本仓库作为 marketplace
+claude plugin marketplace add Iris007-dev/AI-novel --scope user
+
+# 安装（注意：plugin 名按本仓库实际 marketplace.json 调整，下面以原 plugin 名示例）
 claude plugin install webnovel-writer@webnovel-writer-marketplace --scope user
 ```
 
 只想在当前项目生效时，把 `--scope user` 改成 `--scope project`。
 
-> 插件的安装、启用与日常管理等更多用法，见 Claude Code 官方文档：[插件](https://docs.claude.com/en/docs/claude-code/plugins) · [插件市场](https://docs.claude.com/en/docs/claude-code/plugin-marketplaces)。
+> **注意**：本仓库的 `.claude-plugin/marketplace.json` 默认 `owner.name = lingfengQAQ`。
+> 改为自有仓库前，建议先把 `marketplace.json` 里的 `owner` / `homepage` 改成自己的信息，
+> 这样安装时报错/列表才会显示您自己的仓库作为来源。
 
 ### 2. 安装 Python 依赖
 
 ```bash
-python -m pip install -r https://raw.githubusercontent.com/lingfengQAQ/webnovel-writer/HEAD/requirements.txt
+python -m pip install -r requirements.txt
+python -m pip install -r webnovel-writer/scripts/requirements.txt
 ```
 
 ### 3. 初始化一本书
@@ -96,7 +86,7 @@ python -m pip install -r https://raw.githubusercontent.com/lingfengQAQ/webnovel-
 /webnovel-init
 ```
 
-初始化完成后会创建书项目目录，包含：
+初始化完成后会创建书项目目录，包含（详见 `webnovel-writer/commands/webnovel-init.md`）：
 
 ```text
 project-root/
@@ -108,15 +98,9 @@ project-root/
 └── 审查报告/              # 章节审查报告
 ```
 
-### 4. 配置 RAG
+### 4. 配置 RAG（沿用上游）
 
-进入书项目根目录，把 `.env.example` 复制为 `.env` 并填写 API Key：
-
-```bash
-cp .env.example .env
-```
-
-最小配置：
+进入书项目根目录，把 `.env.example` 复制为 `.env` 并填写 API Key。最小配置：
 
 ```bash
 EMBED_BASE_URL=https://api-inference.modelscope.cn/v1
@@ -128,7 +112,7 @@ RERANK_MODEL=jina-reranker-v3
 RERANK_API_KEY=your_rerank_api_key
 ```
 
-没填 Embedding Key 也能用——系统会自动退回 BM25 关键词检索，只是语义召回会弱一些。Embedding 和 Rerank 都可以换成任何兼容 OpenAI 格式的接口。
+没填 Embedding Key 也能用——系统会自动退回 BM25 关键词检索。
 
 ### 5. 开始规划和写作
 
@@ -145,91 +129,93 @@ RERANK_API_KEY=your_rerank_api_key
 /webnovel-dashboard
 ```
 
-Dashboard 是个只读面板，能看项目状态、实体关系图、章节内容、伏笔和追读力数据。前端是预先打包好的，跟着插件一起发，本地不用跑 `npm build`。
+## 言情增强路线图
 
-## 写章工作流
+下面是本 fork 的**目标强化方向**——针对言情长篇的特性（节奏明快 / 爽点密集 / 情感真实 / 反转精妙 / 高潮迭起 / 代入极强）的实施路线。每项注明预期效果，方便按优先级逐项实施。
 
-`/webnovel-write` 不是把活儿丢给模型生成一次就完事，而是一条带关卡的完整流水线：
+> **实施状态**：以下方向尚未合并进当前 commit，作为路线图提供。
+> 当前 commit 等价于上游 v6.2.1，**未做任何言情特定改动**。
+> 按本路线图实施后，将依次产生 4 轮 commit，每轮都附单元测试。
 
-1. 预检项目根、占位符和 Story System 健康状态
-2. 刷新本章 runtime contract
-3. 调用 `context-agent` 生成写作任务书
-4. 根据任务书起草正文
-5. 调用 `reviewer` 做多维审查，blocking issue 不通过则阻断
-6. 润色、排版、Anti-AI 终检
-7. 调用 `data-agent` 提取事实
-8. 生成 `CHAPTER_COMMIT`，驱动 state、index、summary、memory、vector 投影
-9. 执行章节级备份
+### 第一轮：长篇一致性基础（防”挖坑忘填”）
 
-这么设计，是为了把“怎么写”和“写了什么”分开：文笔和节奏可以放开发挥，但发生过的事实必须登记、过审、存档，不能含糊。
+**新增**：跨章一致性审查 agent
+- 文件：`webnovel-writer/agents/cross-chapter-reviewer.md`
+- 作用：专门防长篇最常见的问题——男主第 30 章承诺的事第 80 章忘了；女主第 50 章的人设第 100 章突然漂移
+- 检查项（5 类）：未回收伏笔 / 未兑现承诺 / 违反已揭示规则 / 角色承诺漂移 / 时间线跨章跳跃
+- 接入点：`webnovel-write` Step 3 后自动调用，非 `--minimal` 模式必须跑
 
-### 最终报告怎么看
+**集成到写章**：
+- `skills/webnovel-write/SKILL.md`：新增 Step 1.5（言情题材判定）+ Step 3.5（跨章审查）
+- 硬规则加 1 条：禁止跳过跨章审查
+- 预期效果：写 200 章不再”前后矛盾”——这是言情读者最大的弃书原因
 
-`/webnovel-init`、`/webnovel-plan`、`/webnovel-write` 和 `/webnovel-review` 结束时都会给一份面向作者的最终报告，不直接把内部 JSON、traceback 或长命令日志甩出来。报告先给一句总状态：
+### 第二轮：言情专属方法论（糖点 / 反转 / 人设）
 
-- **已完成**：目标产物和关键校验都通过，可以进入下一步。
-- **部分完成**：主要产物已保留，但有跳过项、自动处理项或待确认的小尾巴。
-- **需要你处理**：系统已经停在安全位置，需要你决定创作方向、事实取舍、是否覆盖文件或如何处理 blocking 问题。
-- **未完成**：关键产物没有可信生成，按报告里的恢复建议重跑或排查。
+**新增 4 份言情文档**：
+- `references/genres/yanqing-playbook.md`（约 350 行）
+  - 6 种言情专属爽点模式（暗涌式心动 / 反差式沦陷 / 误会式心疼 / 公费式撒糖 / 身份式碾压 / 深情式回响）
+  - 6 种言情专属反转套路（真假千金 / 重生前世今生 / 失忆认错人 / 复仇反派翻车 / 错位告白 / 破镜重圆）
+  - 4 类糖点（微触 / 微甜 / 微酸 / 微烫）+ 10 种微烫糖点模板
+  - 9 段情感真实度协议（不直白 / 不悬浮 / 不工具人 / 不完美主义 / 不滥用巧合 / 不悬空台词 / 不靠巧合恋爱 / 不忽视反派动机 / 不滥用巧合反转）
+- `references/genres/yanqing-characters.md`（约 320 行）
+  - 男主 6 型（高冷霸总 / 温柔守护 / 痞气幽默 / 病娇偏执 / 权谋深沉 / 暗涌隐忍）
+  - 女主 6 型（坚韧独立 / 聪慧冷静 / 白月光 / 反差魅力 / 救赎 / 双强）
+  - 36 组合矩阵 + 推荐 Top 5 + 高风险组合警告
+  - 6 阶段关系糖点映射
+- `references/genres/yanqing-chapter-templates.md`（约 480 行）
+  - 10 种章节模板（相遇 / 重逢 / 误会 / 心动 / 表白 / 信任危机 / 复仇 / 反派翻车 / 真相大白 / 大婚）
+  - 每章含：结构骨架（百分比节奏）+ 糖点位置 + 章末钩子模板句 + 踩坑警示
+- `references/genres/yanqing-writer-rules.md`（约 340 行）
+  - 6 段硬指标：字数下限 / 节奏变化 / 段落长度 / 对话占比 35-45% / 糖点下限 / 章末钩子必须情感性
+  - 反派 5 章必现
 
-下面固定三段：一是产生的文件与完成情况，二是过程中遇到的问题与异常耗时，三是下一步建议。系统自动处理过的事也会写出来，比如投影失败后已补跑成功；只有不可恢复故障才会提示查看 `.webnovel/logs/run_last.log`。
+**集成**：
+- `webnovel-init` Step 3.5 言情人设组合推荐 + Step 3.6 言情细分流派（共 39 个 sub_genre）
+- `webnovel-write` Step 1.5 自动加载全部 4 份言情文档
 
-执行过程中只会看到少量进度提示，告诉你当前在做什么、会产生什么；只有创作方向、事实一致性、文件覆盖风险或 blocking issue 需要裁决时才会问你。重复执行同一条 `/webnovel-write 章号` 时，系统会先检查可信断点，尽量从失败点继续，不重写已经可信完成的正文、审查、提交或备份。
+**预期效果**：写出的言情章节糖点密度符合言情读者预期，反派有人话，男女主不人设漂移。
 
-## 内置题材
+### 第三轮：写章硬指标 + 流派模板扩展
 
-内置 37 个中文网文题材模板，也支持把几个题材揉在一起写。下面只列一部分：
+**写章硬指标**：
+- 通过 `references/genres/yanqing-writer-rules.md` 把”节奏明快”从形容词变成可量化指标
+- 字数下限、对话占比、糖点下限、章末钩子类型——每条都可在 review-pipeline 自动检查
 
-| 类型 | 题材示例 |
-|------|----------|
-| 玄幻修仙类 | 修仙、系统流、高武、西幻、无限流、末世、科幻 |
-| 都市现代类 | 都市异能、都市日常、都市脑洞、现实题材、电竞、直播文 |
-| 言情类 | 古言、宫斗宅斗、青春甜宠、豪门总裁、狗血言情、替身文、种田 |
-| 特殊题材 | 规则怪谈、悬疑脑洞、悬疑灵异、历史古代、抗战谍战、知乎短篇、克苏鲁 |
+**扩展题材模板**：
+- 已扩展：现言脑洞 / 豪门总裁 / 替身文 / 青春甜宠 / 古言 / 宫斗宅斗 / 幻想言情 / 民国言情 / 狗血言情 / 种田 / 职场婚恋（共 11 份言情类模板）
+- 每份加 §9 言情套件（流派专属糖点 + 反派配置 + 糖点密度 + Strand 配比）
 
-完整列表见 [题材模板文档](docs/guides/genres.md)。
+**跨章审查 issue category**：
+- 在 `cross-chapter-reviewer` 加 4 个言情专属 category：`yanqing_monogamy_drift` / `yanqing_character_drift` / `yanqing_sugar_density_low` / `yanqing_villain_absence`
+- severity 自动分级，5 章连续 → medium，10 章连续 → high
 
-## 命令速查
+**预期效果**：每个流派都有专属糖点和反派配置；AI 不再写”全言情用同一套路”。
 
-### Claude Code Skill 命令
+### 第四轮：CSV / Deconstruction / Quality Trend
 
-| 命令 | 示例 | 用途 |
-|------|------|------|
-| `/webnovel-init` | `/webnovel-init` | 初始化新书项目 |
-| `/webnovel-plan` | `/webnovel-plan 1` | 生成卷纲、时间线和章纲 |
-| `/webnovel-write` | `/webnovel-write 45` | 写作并提交指定章节 |
-| `/webnovel-review` | `/webnovel-review 1-5` | 审查章节范围 |
-| `/webnovel-query` | `/webnovel-query 萧炎` | 查询角色、伏笔、状态等信息 |
-| `/webnovel-learn` | `/webnovel-learn "这个钩子设计有效"` | 写入项目经验记忆 |
-| `/webnovel-dashboard` | `/webnovel-dashboard` | 启动只读可视化面板 |
-| `/webnovel-doctor` | `/webnovel-doctor --chapter 12` | 只读体检项目文件、DB、RAG 和依赖 |
+**CSV 知识库扩展**（用现有 schema 加 15 条）：
+- `桥段套路.csv`：TR-201 破镜重圆 / TR-202 失忆再相恋 / TR-203 带球跑 / TR-204 契约情缘 / TR-205 替身白月光
+- `爽点与节奏.csv`：PA-201 公费撒糖 / PA-202 反向告白 / PA-203 暗中守护 / PA-204 心动瞬间 / PA-205 吃醋
+- `人设与关系.csv`：CH-201 温柔守护男 / CH-202 病娇偏执男 / CH-203 绿茶女二 / CH-204 救赎女主 / CH-205 双强女主
 
-### CLI 入口
+**拆书专用**：
+- `references/genres/yanqing-deconstruction-hints.md`：deconstruction-agent 在题材为言情时自动加载，识别伏笔密度 / 糖点频率 / 言情人设组合 / 反转套路
 
-所有命令行工具统一从 `scripts/webnovel.py` 进入：
+**Quality Trend**：
+- `scripts/quality_trend_report.py` 加 `build_yanqing_quality_section` 函数
+- 自动追加 5 个言情专属 trend 字段：糖点密度趋势 / 心动瞬间频率 / 反派活跃度 / 章末钩子类型分布 / 情感一致性
 
+**预期效果**：RAG 检索能命中言情专属条目；拆言情参考书自动识别；Dashboard 能看到言情质量趋势。
+
+### 实施建议
+
+按上面 4 轮顺序逐项合并，每轮独立 commit。每轮完成后跑：
 ```bash
-python -X utf8 "<CLAUDE_PLUGIN_ROOT>/scripts/webnovel.py" --project-root "<PROJECT_ROOT>" <子命令> [参数]
+python -m pytest --no-cov --ignore=test_dashboard_security.py
 ```
 
-常用子命令：
-
-| 子命令 | 说明 |
-|--------|------|
-| `where` | 打印当前解析出的书项目根目录 |
-| `preflight` | 校验插件路径、项目根、Story System 健康状态 |
-| `project-status` | 输出机器可读短状态、phase 和下一步 |
-| `doctor` | 阶段感知项目体检，给出影响和修复建议 |
-| `write-gate` | 写前、提交前、提交后三个自然边界校验 |
-| `projections` | 基于已有 commit 补跑或重放投影 |
-| `story-system` | 生成合同种子和 runtime contracts |
-| `chapter-commit` | 提交章节事实并驱动投影 |
-| `story-events` | 查询章节事件或检查事件链健康 |
-| `memory` | 查看、查询、导出和回填长期记忆 |
-| `rag` | 管理向量索引和检索状态 |
-| `status` | 输出项目健康报告 |
-
-更多命令见 [命令详解](docs/guides/commands.md)。
+每轮目标新增 20-30 个单元测试，累计 100-150 个言情专属测试。
 
 ## 文档导航
 
@@ -237,7 +223,6 @@ python -X utf8 "<CLAUDE_PLUGIN_ROOT>/scripts/webnovel.py" --project-root "<PROJE
 |------|------|
 | [文档中心](docs/README.md) | 所有文档索引和推荐阅读顺序 |
 | [系统架构与模块](docs/architecture/overview.md) | 核心理念、Agent 分工、Story System 设计 |
-| [命令详解](docs/guides/commands.md) | Skill 命令和 CLI 子命令速查 |
 | [RAG 与配置](docs/guides/rag-and-config.md) | 检索流程、环境变量、默认模型 |
 | [题材模板](docs/guides/genres.md) | 37 个题材模板和复合题材规则 |
 | [项目结构与运维](docs/operations/operations.md) | 目录层级、健康检查、备份恢复 |
@@ -245,102 +230,41 @@ python -X utf8 "<CLAUDE_PLUGIN_ROOT>/scripts/webnovel.py" --project-root "<PROJE
 
 ## 开发与测试
 
-克隆仓库后安装依赖：
-
 ```bash
 python -m pip install -r requirements.txt
 python -m pip install -r webnovel-writer/scripts/requirements.txt
+
+# 运行测试（注意：test_dashboard_security.py 需要 fastapi）
+python -m pytest --ignore=webnovel-writer/scripts/tests/test_dashboard_security.py
 ```
 
-运行测试：
+Dashboard 前端位于 `webnovel-writer/dashboard/frontend/`，发布版已经包含 `dist/` 构建产物。
+
+## 与上游同步
+
+本仓库基于 [lingfengQAQ/webnovel-writer](https://github.com/lingfengQAQ/webnovel-writer)。
+如需把上游更新合并进来：
 
 ```bash
-python -m pytest
+git remote add upstream https://github.com/lingfengQAQ/webnovel-writer.git
+git fetch upstream
+git merge upstream/master   # 或 rebase
 ```
 
-Dashboard 前端位于 `webnovel-writer/dashboard/frontend/`，发布版已经包含 `dist/` 构建产物。开发前端时可单独进入该目录执行：
+冲突通常出现在以下位置，请按言情增强方向手动解决：
+- `webnovel-writer/agents/cross-chapter-reviewer.md`（本仓库新增）
+- `webnovel-writer/references/genres/`（本仓库新增）
+- `webnovel-writer/templates/genres/*.md`（追加 §9 言情套件）
+- `webnovel-writer/skills/webnovel-write/SKILL.md`（Step 1.5 / 3.5 改动）
+- `webnovel-writer/skills/webnovel-init/SKILL.md`（Step 3.5 / 3.6 改动）
 
-```bash
-npm install
-npm run dev
-```
+## 协议
 
-## 排查问题
+本仓库采用 **GPL v3** 协议（与上游相同），见 [LICENSE](LICENSE)。
 
-优先执行预检：
+由于 GPL v3 是 copyleft 协议：
+- 您可以在本仓库基础上做修改，但发布时必须同样开源
+- 必须保留原作者署名（lingfengQAQ）、版权声明、许可证声明
+- 修改内容必须明确标注
 
-```bash
-python -X utf8 "<CLAUDE_PLUGIN_ROOT>/scripts/webnovel.py" --project-root "<PROJECT_ROOT>" preflight
-python -X utf8 "<CLAUDE_PLUGIN_ROOT>/scripts/webnovel.py" --project-root "<PROJECT_ROOT>" doctor --format text
-```
-
-重点查看：
-
-- `story_runtime.mainline_ready` 是否为 true
-- `.story-system/commits/chapter_XXX.commit.json` 是否存在且 accepted
-- `projection_status` 是否全部为 `done` 或 `skipped`
-- `index.db`、`summaries/`、`memory_scratchpad.json` 是否正常生成
-- RAG API Key 是否已写入书项目根目录的 `.env`
-
-更多运维说明见 [项目结构与运维](docs/operations/operations.md)。
-
-## 贡献
-
-欢迎提 Issue 和 PR。最好用仓库里自带的模板，把复现步骤、环境信息、影响范围和验证方式填一下，也记得先给隐私信息脱敏。
-
-建议流程：
-
-```bash
-git checkout -b feature/your-feature
-git commit -m "feat: add your feature"
-git push origin feature/your-feature
-```
-
-适合贡献的方向：
-
-- 新题材模板和题材规则
-- 更强的章节审查维度
-- Dashboard 信息架构和可视化
-- RAG 检索、实体消歧、长期记忆
-- Windows/macOS/Linux 兼容性问题
-- 文档、示例项目和新手教程
-
-## 赞助与支持
-
-Webnovel Writer 用业余时间维护。如果它帮你省下了梳理设定、对齐伏笔的功夫，欢迎来信交流想法、反馈使用体验，或表达对项目的支持：
-
-📮 **ksdflisjdf@gmail.com**
-
-## 更新简介
-
-| 版本 | 主要变化 |
-|------|----------|
-| **v6.2.1 (当前)** | 修复 Windows 写章提交偶发的拒绝访问（WinError 5）：资料文件被短暂占用时自动重试 |
-| **v6.2.0** | 写章结果更清楚，失败后更好恢复 |
-| **v6.1.0** | 插件运行时加固：新增 doctor/project-status/write-gate/projection 重放、hooks、行为 eval 与发布校验 |
-| **v6.0.0** | Story System 全链路上线（合同种子 + 运行时合同 + 章节提交 + 事件审计），补齐集成测试 |
-| **v5.5.5** | 长期记忆闭环：写前注入 + 写后沉淀，新增 `memory` 运维命令 |
-| **v5.5.4** | 写作链提示词强约束，统一中文化审查和报告文案 |
-| **v5.5.3** | 统一 `preflight` 预检命令，修复 Windows 终端编码问题 |
-| **v5.5.2** | 大纲章节名同步到正文文件名 |
-| **v5.5.1** | 修复卷级大纲上下文提取，补齐 Dashboard 和 Learn 命令文档 |
-| **v5.5.0** | 新增只读可视化 Dashboard，支持实时刷新 |
-| **v5.4.4** | 接入 Plugin Marketplace 安装机制 |
-| **v5.4.3** | 增强 RAG 智能上下文（`auto/graph_hybrid` 回退 BM25） |
-| **v5.3** | 引入追读力系统（Hook / Cool-point / 微兑现 / 债务追踪） |
-
-## 开源协议
-
-本项目使用 [GPL v3](LICENSE) 协议。
-
-## Star 历史
-
-[![Star History Chart](https://api.star-history.com/svg?repos=lingfengQAQ/webnovel-writer&type=Date)](https://star-history.com/#lingfengQAQ/webnovel-writer&Date)
-
-## 致谢
-
-本项目使用 Claude Code、Gemini CLI 与 Codex 配合 Vibe Coding 方式开发。
-
-灵感来源：[Linux.do 帖子](https://linux.do/t/topic/1397944/49)
-
-感谢 `oh-story-claudecode` 提供拆文流程参考。
+详细条款见 [LICENSE](LICENSE) 文件或 [GNU 官方网站](https://www.gnu.org/licenses/gpl-3.0.html)。
