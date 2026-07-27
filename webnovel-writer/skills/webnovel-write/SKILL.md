@@ -25,6 +25,7 @@ argument-hint: "[章号] [--fast|--minimal]"
 - 必须使用 `Agent` 工具调用指定 subagent；不得用主流程口头代替 subagent 输出
 - 审查只跑一轮；blocking issue 定点修复或经用户裁决后才进 Step 4/5
 - 跨章一致性审查（Step 3.5）默认必跑；除 `--minimal` 外不得跳过
+- 言情题材（古言/现言/宫斗宅斗/青春甜宠/豪门总裁/狗血言情/替身文/种田/现言脑洞/民国言情/幻想言情/职场婚恋）必须加载 `references/genres/yanqing-playbook.md` + `yanqing-characters.md` + `yanqing-chapter-templates.md` + `yanqing-writer-rules.md`（写入 Step 1.5）；糖点密度不达标会在 Step 3.5 跨章审查时被打回
 - 失败只补跑失败步骤，不回退
 - 参考资料按步骤按需加载
 
@@ -113,6 +114,39 @@ Task:
 ```
 
 上下文不足、legacy fallback、伏笔数据缺失、任务书不完整或耗时异常，必须写入 `problems` / `auto_handled`，不得在最终报告中静默。
+
+#### Step 1.5：言情题材判定与言情套件加载
+
+主流程读取 `.webnovel/state.json` 的 `project_info.genre`。如果 ∈ 言情题材集合（古言 / 现言 / 宫斗宅斗 / 青春甜宠 / 豪门总裁 / 狗血言情 / 替身文 / 种田 / 现言脑洞 / 民国言情 / 幻想言情 / 职场婚恋），启用以下言情套件加载流程。
+
+**context-agent 必须额外读取 4 份文件**（Grep 区段，不全文读）：
+
+| 文件 | 用途 | 加载优先级 |
+|------|------|----------|
+| `references/genres/yanqing-playbook.md` | 6 种言情专属爽点 + 6 种反转套路 + 9 段情感真实度协议 | 必备 |
+| `references/genres/yanqing-characters.md` | 男主 6 型 × 女主 6 型 矩阵 + Top 5 + 高风险组合 | 必备（如果 init 已写入 `idea_bank.json.selected_idea.character_archetype`，优先按已选组合） |
+| `references/genres/yanqing-chapter-templates.md` | 10 种章节模板（相遇/重逢/误会/心动/表白/信任危机/复仇/反派翻车/真相大白/大婚） | 按章型判定加载 |
+| `references/genres/yanqing-writer-rules.md` | 字数下限 / 对话占比 / 糖点下限 / 章末钩子必须情感性 | 必备（注入任务书硬指标） |
+
+**任务书第 4 段（"怎么写更顺"）必须包含**：
+
+- 当前章节所属情感节奏区间（建立期 / 拉扯期 / 确认期 / 考验期 / 爆发期 / 甜蜜期）
+- 本章应放的糖点类型（微触 / 微甜 / 微酸 / 微烫）+ 模板参考（playbook §三·3.3）
+- 本章男女主应推进的关系维度（信任 / 亲密 / 承诺 / 激情 / 安全感，任一）
+- 男主类型（M1-M6）→ 糖点聚焦方向（少言多行 / 细节糖 / 互怼糖 / 张力糖 / 信任糖 / 知情糖）
+- 女主类型（F1-F6）→ 糖点聚焦方向（反差糖 / 失态糖 / 守护糖 / 揭示糖 / 治愈糖 / 竞争糖）
+
+**任务书硬指标自检清单**（注入"## 本章硬指标"段）：
+
+| 项 | 标准 |
+|------|------|
+| 字数下限 | 关键章 ≥2000 / 大婚章 ≥2500 / 短章 ≥1500 |
+| 对话占比 | 35-45% |
+| 章末钩子 | 100% 情感性（禁止事件性钩子） |
+| 糖点下限 | 按章型见 yanqing-writer-rules.md §三·3.1 |
+| 反派出场 | 每 5 章至少 1 次 |
+
+`--minimal` 模式仍加载 4 份文件，但不注入任务书硬指标自检。
 
 ### Step 2：起草正文
 
